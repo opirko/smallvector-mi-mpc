@@ -42,7 +42,7 @@ small_vector(const small_vector & other) : small_vector(){
   try{
   reserve(other.m_size);
   } catch(std::exception & e){
-    this->~small_vector();
+    this->nearlyDestroy();
     std::cout<<e.what()<<std::endl;
     throw;
     }
@@ -73,7 +73,7 @@ small_vector(std::initializer_list<T> init) : small_vector(){
   try{
   reserve(init.size());
   } catch(std::exception & e){
-    this->~small_vector();
+    this->nearlyDestroy();
     std::cout<<e.what()<<std::endl;
     throw;
     }
@@ -95,11 +95,11 @@ small_vector(std::initializer_list<T> init) : small_vector(){
 small_vector & operator=(const small_vector & other){
   //std::cout<<"Copy op= called"<<std::endl;
   if (this==&other) return *this;
-  this->~small_vector();
+  this->nearlyDestroy();
   try{
   reserve(other.m_size);
   } catch(std::exception & e){
-    this->~small_vector();
+    this->nearlyDestroy();
     std::cout<<e.what()<<std::endl;
     throw;
     }
@@ -112,7 +112,7 @@ small_vector & operator=(const small_vector & other){
 // Move op =
 small_vector & operator=(small_vector && other) noexcept{
   //std::cout<<"Move op= called"<<std::endl;
-  this->~small_vector();
+  this->nearlyDestroy();
   if (other.begin()==other.m_buffptr){
     m_buffptr=other.m_buffptr;
     other.m_buffptr=nullptr;
@@ -196,7 +196,7 @@ void reserve(size_t inp){
     std::cout<<e.what()<<std::endl;
     throw;
     }
-  this->~small_vector();
+  this->nearlyDestroy();
   m_data=temp;
   m_size=origSize;
   m_alloc=inp;
@@ -299,6 +299,13 @@ void PbEbCheck(size_t chckSize){
     }
     }
   }
+  
+// Near Destructor
+void nearlyDestroy() noexcept{
+  clear();
+  if (m_alloc) ::operator delete (m_data);
+  }
+  
 }; // class small vector
 
 // outside swap function
