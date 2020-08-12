@@ -304,6 +304,8 @@ void PbEbCheck(size_t chckSize){
 void nearlyDestroy() noexcept{
   clear();
   if (m_alloc) ::operator delete (m_data);
+  m_alloc=0;
+  m_size=0;
   }
   
 }; // class small vector
