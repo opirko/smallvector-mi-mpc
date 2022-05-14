@@ -1,5 +1,5 @@
-#ifndef MPC_SMALL_VECTOR
-#define MPC_SMALL_VECTOR
+#ifndef MPC_SMALLVECTOR
+#define MPC_SMALLVECTOR
 
 #include <algorithm>
 #include <cassert>
@@ -10,8 +10,8 @@
 #include <memory>
 
 namespace mpc {
-template <typename T, size_t N> class small_vector {
-
+template <typename T, size_t N = 8>
+class smallVector {
   // Member variables
   T *m_data;
   T *m_buffptr;
@@ -19,7 +19,7 @@ template <typename T, size_t N> class small_vector {
   size_t m_alloc;
   size_t m_size;
 
-public:
+ public:
   // Public member types
   typedef T value_type;
   typedef T &reference;
@@ -29,16 +29,20 @@ public:
   typedef T *iterator;
   typedef const T *const_iterator;
 
-  //___________________________Constructors and
-  // destructor_______________________________
+  //====================Ctors and Dtors====================
 
   // Default constructor
-  small_vector()
-      : m_data(nullptr), m_buffptr(reinterpret_cast<T *>(m_buff)), m_alloc(0),
+  smallVector()
+      : m_data(nullptr),
+        m_buffptr(reinterpret_cast<T *>(m_buff)),
+        m_alloc(0),
         m_size(0) {}
 
+  // Constructor with given size
+  smallVector(const size_t sz) : smallVector() { resize(sz); }
+
   // Copy constructor
-  small_vector(const small_vector &other) : small_vector() {
+  smallVector(const smallVector &other) : smallVector() {
     // std::cout<<"Copy constr called"<<std::endl;
     try {
       reserve(other.m_size);
@@ -53,7 +57,7 @@ public:
   }
 
   // Move constructor
-  small_vector(small_vector &&other) noexcept {
+  smallVector(smallVector &&other) noexcept {
     // std::cout<<"Move constr called"<<std::endl;
     if (other.begin() == other.m_buffptr) {
       m_buffptr = other.m_buffptr;
@@ -69,7 +73,7 @@ public:
   }
 
   // Conversion constructor
-  small_vector(std::initializer_list<T> init) : small_vector() {
+  smallVector(std::initializer_list<T> init) : smallVector() {
     try {
       reserve(init.size());
     } catch (std::exception &e) {
@@ -84,19 +88,17 @@ public:
   }
 
   // Destructor
-  ~small_vector() {
+  ~smallVector() {
     clear();
-    if (m_alloc)
-      ::operator delete(m_data);
+    if (m_alloc) ::operator delete(m_data);
   }
 
   //___________________________Operators_______________________________
 
   // Copy op =
-  small_vector &operator=(const small_vector &other) {
+  smallVector &operator=(const smallVector &other) {
     // std::cout<<"Copy op= called"<<std::endl;
-    if (this == &other)
-      return *this;
+    if (this == &other) return *this;
     this->nearlyDestroy();
     try {
       reserve(other.m_size);
@@ -112,7 +114,7 @@ public:
   }
 
   // Move op =
-  small_vector &operator=(small_vector &&other) noexcept {
+  smallVector &operator=(smallVector &&other) noexcept {
     // std::cout<<"Move op= called"<<std::endl;
     this->nearlyDestroy();
     if (other.begin() == other.m_buffptr) {
@@ -165,7 +167,8 @@ public:
   }
 
   // Emplace back
-  template <typename... Ts> void emplace_back(Ts &&...params) {
+  template <typename... Ts>
+  void emplace_back(Ts &&...params) {
     // std::cout<<"Emplace Back called"<<std::endl;
     try {
       PbEbCheck(m_size + 1);
@@ -181,8 +184,7 @@ public:
   // Strong exc. guar.
   void reserve(size_t inp) {
     // std::cout<<"Reserve called"<<std::endl;
-    if (m_alloc > inp || N >= inp)
-      return;
+    if (m_alloc > inp || N >= inp) return;
     T *temp = (T *)::operator new(inp * sizeof(T));
     size_t origSize = m_size;
     size_t i;
@@ -206,8 +208,7 @@ public:
 
   // strong exc. guarantee
   void resize(size_t size, const T &val = T()) {
-    if (size == m_size)
-      return;
+    if (size == m_size) return;
     if (size < m_size) {
       while (size < m_size) {
         (end() - 1)->~T();
@@ -272,7 +273,7 @@ public:
 
   //___________________________Misc_______________________________
 
-  void swap(small_vector &other) noexcept {
+  void swap(smallVector &other) noexcept {
     // std::cout<<"swap called"<<std::endl;
     if (begin() == m_data && other.begin() == other.m_data)
       std::swap(m_data, other.m_data);
@@ -292,7 +293,7 @@ public:
 
   //___________________________Private func_______________________________
 
-private:
+ private:
   void PbEbCheck(size_t chckSize) {
     if (chckSize > N) {
       try {
@@ -313,20 +314,19 @@ private:
   // Near Destructor
   void nearlyDestroy() noexcept {
     clear();
-    if (m_alloc)
-      ::operator delete(m_data);
+    if (m_alloc) ::operator delete(m_data);
     m_alloc = 0;
     m_size = 0;
   }
 
-}; // class small vector
+};  // class small vector
 
 // outside swap function
 template <typename T, size_t N>
-void swap(small_vector<T, N> &avec, small_vector<T, N> &bvec) noexcept {
+void swap(smallVector<T, N> &avec, smallVector<T, N> &bvec) noexcept {
   avec.swap(bvec);
 }
 
-} // namespace mpc
+}  // namespace mpc
 
-#endif // MPC_SMALL_VECTOR
+#endif  // MPC_SMALLVECTOR
