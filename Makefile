@@ -2,7 +2,7 @@
 
 INC=-I/src
 CC = g++
-COPT = -std=c++14 -Wall -pedantic -g
+COPT = -std=c++11 -Wall -pedantic -g
 
 
 all: test

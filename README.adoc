@@ -3,5 +3,4 @@ Small vector in C++11
 Ondřej Pírko <ondra@pirko.cz>
 
 Container similar to _std::vector_ created as a school project at FIT CTU, specifically in MI-MPC course.
-No leaks detected (by _valgrind_). Compiled as follows:
-_g\++ -Wall -pedantic -g -std=c++11_.
+No leaks detected (by _valgrind_).
