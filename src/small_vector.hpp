@@ -36,14 +36,16 @@ ForwardIt uninitialized_move(InputIt first, InputIt last, ForwardIt d_first) {
 #endif
 
 // Main Small Vector class
-template <typename T, size_t N = 8>
+template <typename T, size_t N = sizeof(void *)>
 class small_vector {
   // Constants
   static constexpr size_t LARGE_SIZE_THRESHOLD = 1024;
 
   // Member variables
-  T *m_data;
-  alignas(alignof(T)) char m_buff[sizeof(T) * N];
+  union {
+    T *m_data;
+    alignas(alignof(T)) char m_buff[sizeof(T) * N];
+  };
   size_t m_alloc;
   size_t m_size;
 
