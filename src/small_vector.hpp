@@ -223,6 +223,54 @@ class small_vector {
     m_size++;
   }
 
+  void pop_back() {
+    if (m_size > 0) {
+      (end() - 1)->~T();
+      m_size--;
+    }
+  }
+
+  // Insert element at position
+  iterator insert(const_iterator pos, const T &value) {
+    return insert_impl(pos, value);
+  }
+
+  iterator insert(const_iterator pos, T &&value) {
+    return insert_impl(pos, std::move(value));
+  }
+
+  // Erase element at position
+  iterator erase(const_iterator pos) { return erase(pos, pos + 1); }
+
+  // Erase range of elements
+  iterator erase(const_iterator first, const_iterator last) {
+    const auto first_offset = first - cbegin();
+    const auto last_offset = last - cbegin();
+
+    if (first_offset < 0 || last_offset > static_cast<ptrdiff_t>(m_size) ||
+        first_offset > last_offset) {
+      throw std::out_of_range("small_vector::erase: iterator range invalid");
+    }
+
+    if (first == last) {
+      return begin() + first_offset;
+    }
+
+    auto erase_first = begin() + first_offset;
+    auto erase_last = begin() + last_offset;
+
+    // Move remaining elements to fill the gap and destroy trailing
+    std::move(erase_last, end(), erase_first);
+    auto new_end = end() - (last_offset - first_offset);
+    for (auto it = new_end; it != end(); ++it) {
+      it->~T();
+    }
+
+    m_size -= (last_offset - first_offset);
+
+    return erase_first;
+  }
+
   // Reserves at least inp in vec
   // Strong exc. guar.
   void reserve(const size_t inp) {
@@ -364,6 +412,32 @@ class small_vector {
   //___________________________Private func_______________________________
 
  private:
+  iterator insert_impl(const_iterator pos, T &&value) {
+    const auto offset = pos - cbegin();
+    if (offset < 0 || offset > static_cast<ptrdiff_t>(m_size)) {
+      throw std::out_of_range("small_vector::insert: iterator out of range");
+    }
+
+    try {
+      ensure_capacity(m_size + 1);
+    } catch (std::exception &e) {
+      handle_exception(e);
+    }
+
+    auto insert_pos = begin() + offset;
+
+    if (m_size > 0) {
+      // Move-construct last element and move existing elements backward
+      new (end()) T(std::move(*(end() - 1)));
+      std::move_backward(insert_pos, end() - 1, end());
+    }
+
+    *insert_pos = std::forward<T>(value);
+    ++m_size;
+
+    return insert_pos;
+  }
+
   void ensure_capacity(const size_t req_sz) {
     if (req_sz <= capacity()) return;  // cap ensured
 

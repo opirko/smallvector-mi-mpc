@@ -203,6 +203,243 @@ TEST(SmallVectorTest, EmplaceBack) {
   EXPECT_EQ(vec[1], "aaaaa");
 }
 
+TEST(SmallVectorTest, PopBack) {
+  // simple type
+  {
+    small_vector<int> vec{1, 2, 3, 4, 5};
+
+    vec.pop_back();
+    EXPECT_EQ(vec.size(), 4);
+    EXPECT_EQ(vec[3], 4);
+
+    vec.pop_back();
+    EXPECT_EQ(vec.size(), 3);
+    EXPECT_EQ(vec[2], 3);
+
+    vec.pop_back();
+    vec.pop_back();
+    vec.pop_back();
+    EXPECT_EQ(vec.size(), 0);
+
+    vec.pop_back();
+    EXPECT_EQ(vec.size(), 0);
+  }
+  // string
+  {
+    small_vector<std::string> vec;
+    vec.push_back("hello");
+    vec.push_back("world");
+    vec.push_back("test");
+
+    vec.pop_back();
+    EXPECT_EQ(vec.size(), 2);
+    EXPECT_EQ(vec[0], "hello");
+    EXPECT_EQ(vec[1], "world");
+  }
+}
+
+TEST(SmallVectorTest, Insert) {
+  small_vector<int> vec{2, 3, 4};
+
+  // beginning
+  auto it = vec.insert(vec.cbegin(), 1);
+  EXPECT_EQ(vec.size(), 4);
+  for (int i = 0; i < static_cast<int>(vec.size()); i++) {
+    EXPECT_EQ(vec[i], i + 1);
+  }
+  EXPECT_EQ(it, vec.begin());
+
+  // end
+  it = vec.insert(vec.cend(), 5);
+  EXPECT_EQ(vec.size(), 5);
+  for (int i = 0; i < static_cast<int>(vec.size()); i++) {
+    EXPECT_EQ(vec[i], i + 1);
+  }
+  EXPECT_EQ(it, vec.end() - 1);
+}
+
+TEST(SmallVectorTest, InsertInMiddle) {
+  small_vector<int> vec{1, 3, 4};
+
+  auto it = vec.insert(vec.cbegin() + 1, 2);
+  EXPECT_EQ(vec.size(), 4);
+  for (int i = 0; i < static_cast<int>(vec.size()); i++) {
+    EXPECT_EQ(vec[i], i + 1);
+  }
+  EXPECT_EQ(it, vec.begin() + 1);
+}
+
+TEST(SmallVectorTest, InsertIntoEmpty) {
+  small_vector<int> vec;
+
+  auto it = vec.insert(vec.cbegin(), 42);
+  EXPECT_EQ(vec.size(), 1);
+  EXPECT_EQ(vec[0], 42);
+  EXPECT_EQ(it, vec.begin());
+}
+
+TEST(SmallVectorTest, InsertMoveSemantics) {
+  small_vector<std::string> vec{"hello", "world"};
+  std::string str = "inserted";
+
+  auto it = vec.insert(vec.cbegin() + 1, std::move(str));
+  EXPECT_EQ(vec.size(), 3);
+  EXPECT_EQ(vec[0], "hello");
+  EXPECT_EQ(vec[1], "inserted");
+  EXPECT_EQ(vec[2], "world");
+  EXPECT_TRUE(str.empty());
+  EXPECT_EQ(it, vec.begin() + 1);
+}
+
+TEST(SmallVectorTest, InsertCausesReallocation) {
+  small_vector<int, 2> vec{1, 2};
+  EXPECT_EQ(vec.get_alloc(), 0);  // using stack
+
+  vec.insert(vec.cbegin() + 1, 99);
+  EXPECT_EQ(vec.size(), 3);
+  EXPECT_EQ(vec[0], 1);
+  EXPECT_EQ(vec[1], 99);
+  EXPECT_EQ(vec[2], 2);
+  EXPECT_GT(vec.get_alloc(), 0);  // now using heap
+}
+
+TEST(SmallVectorTest, InsertOutOfRange) {
+  small_vector<int> vec{1, 2, 3};
+
+  EXPECT_THROW(vec.insert(vec.cbegin() + 4, 42), std::out_of_range);
+  EXPECT_THROW(vec.insert(vec.cbegin() - 1, 42), std::out_of_range);
+}
+
+TEST(SmallVectorTest, Erase) {
+  small_vector<int> vec{1, 2, 3, 4};
+
+  // beginning
+  auto it = vec.erase(vec.cbegin());
+  EXPECT_EQ(vec.size(), 3);
+  EXPECT_EQ(vec[0], 2);
+  EXPECT_EQ(vec[1], 3);
+  EXPECT_EQ(vec[2], 4);
+  EXPECT_EQ(it, vec.begin());
+
+  // end
+  it = vec.erase(vec.cend() - 1);
+  EXPECT_EQ(vec.size(), 2);
+  EXPECT_EQ(vec[0], 2);
+  EXPECT_EQ(vec[1], 3);
+  EXPECT_EQ(it, vec.end());
+}
+
+TEST(SmallVectorTest, EraseInMiddle) {
+  small_vector<int> vec{1, 2, 3, 4};
+
+  auto it = vec.erase(vec.cbegin() + 1);
+  EXPECT_EQ(vec.size(), 3);
+  EXPECT_EQ(vec[0], 1);
+  EXPECT_EQ(vec[1], 3);
+  EXPECT_EQ(vec[2], 4);
+  EXPECT_EQ(it, vec.begin() + 1);
+}
+
+TEST(SmallVectorTest, EraseLastElement) {
+  small_vector<int> vec{42};
+
+  auto it = vec.erase(vec.cbegin());
+  EXPECT_EQ(vec.size(), 0);
+  EXPECT_EQ(it, vec.end());
+}
+
+TEST(SmallVectorTest, EraseStrings) {
+  small_vector<std::string> vec{"hello", "world", "test"};
+
+  vec.erase(vec.cbegin() + 1);
+  EXPECT_EQ(vec.size(), 2);
+  EXPECT_EQ(vec[0], "hello");
+  EXPECT_EQ(vec[1], "test");
+}
+
+TEST(SmallVectorTest, EraseRange) {
+  small_vector<int> vec{1, 2, 3, 4, 5, 6};
+
+  // remove a part
+  auto it = vec.erase(vec.cbegin() + 1, vec.cbegin() + 4);
+  EXPECT_EQ(vec.size(), 3);
+  EXPECT_EQ(vec[0], 1);
+  EXPECT_EQ(vec[1], 5);
+  EXPECT_EQ(vec[2], 6);
+  EXPECT_EQ(it, vec.begin() + 1);
+
+  // remove everything
+  it = vec.erase(vec.cbegin(), vec.cend());
+  EXPECT_EQ(vec.size(), 0);
+  EXPECT_EQ(it, vec.end());
+}
+
+TEST(SmallVectorTest, EraseRangeEmpty) {
+  small_vector<int> vec{1, 2, 3, 4, 5};
+
+  auto it = vec.erase(vec.cbegin() + 2, vec.cbegin() + 2);
+  EXPECT_EQ(vec.size(), 5);
+  EXPECT_EQ(it, vec.begin() + 2);
+  for (int i = 0; i < 5; ++i) {
+    EXPECT_EQ(vec[i], i + 1);
+  }
+}
+
+TEST(SmallVectorTest, EraseRangeAtBeginning) {
+  small_vector<int> vec{1, 2, 3, 4, 5};
+
+  auto it = vec.erase(vec.cbegin(), vec.cbegin() + 2);
+  EXPECT_EQ(vec.size(), 3);
+  EXPECT_EQ(vec[0], 3);
+  EXPECT_EQ(vec[1], 4);
+  EXPECT_EQ(vec[2], 5);
+  EXPECT_EQ(it, vec.begin());
+}
+
+TEST(SmallVectorTest, EraseRangeAtEnd) {
+  small_vector<int> vec{1, 2, 3, 4, 5};
+
+  auto it = vec.erase(vec.cbegin() + 3, vec.cend());
+  EXPECT_EQ(vec.size(), 3);
+  EXPECT_EQ(vec[0], 1);
+  EXPECT_EQ(vec[1], 2);
+  EXPECT_EQ(vec[2], 3);
+  EXPECT_EQ(it, vec.end());
+}
+
+TEST(SmallVectorTest, EraseOutOfRange) {
+  small_vector<int> vec{1, 2, 3};
+
+  EXPECT_THROW(vec.erase(vec.cbegin() + 3), std::out_of_range);
+  EXPECT_THROW(vec.erase(vec.cbegin() - 1), std::out_of_range);
+  EXPECT_THROW(vec.erase(vec.cbegin() + 2, vec.cbegin() + 1),
+               std::out_of_range);
+}
+
+TEST(SmallVectorTest, InsertEraseSequence) {
+  small_vector<int> vec;
+
+  vec.insert(vec.cend(), 1);
+  vec.insert(vec.cend(), 2);
+  vec.insert(vec.cbegin(), 0);
+  vec.insert(vec.cbegin() + 2, 15);
+  EXPECT_EQ(vec.size(), 4);
+  EXPECT_EQ(vec[0], 0);
+  EXPECT_EQ(vec[1], 1);
+  EXPECT_EQ(vec[2], 15);
+  EXPECT_EQ(vec[3], 2);
+
+  vec.erase(vec.cbegin() + 2);
+  vec.erase(vec.cbegin());
+  EXPECT_EQ(vec.size(), 2);
+  EXPECT_EQ(vec[0], 1);
+  EXPECT_EQ(vec[1], 2);
+
+  vec.pop_back();
+  vec.pop_back();
+  EXPECT_EQ(vec.size(), 0);
+}
+
 TEST(SmallVectorTest, Reserve) {
   small_vector<int> vec;
   vec.reserve(20);
