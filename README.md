@@ -1,7 +1,6 @@
 # Small Vector in C++
 
 Container similar to `std::vector` created as a school project at FIT CTU, specifically in MI-MPC course.
-No leaks detected (by `valgrind`).
 
 ## Build Instructions
 
