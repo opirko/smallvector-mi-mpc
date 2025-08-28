@@ -22,7 +22,7 @@ This project uses CMake as its build system and supports C++11 or higher.
 
    To specify a different C++ standard:
    ```bash
-   cmake -DCXX_STANDARD=17 ..
+   cmake -DCXX_STANDARD=23 ..
    ```
 
 3. Build the project:
