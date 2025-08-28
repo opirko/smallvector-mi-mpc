@@ -75,8 +75,8 @@ class small_vector {
     try {
       reserve(other.m_size);
     } catch (std::exception &e) {
-      this->nearlyDestroy();
-      handleException(e);
+      this->nearly_destroy();
+      handle_exception(e);
     }
     std::uninitialized_copy(other.begin(), other.end(), begin());
     m_size = other.m_size;
@@ -106,8 +106,8 @@ class small_vector {
     try {
       reserve(init.size());
     } catch (std::exception &e) {
-      this->nearlyDestroy();
-      handleException(e);
+      this->nearly_destroy();
+      handle_exception(e);
     }
     for (auto it = init.begin(); it != init.end(); it++) {
       new (end()) T(*it);
@@ -126,12 +126,12 @@ class small_vector {
   // Copy op =
   small_vector &operator=(const small_vector &other) {
     if (this == &other) return *this;
-    this->nearlyDestroy();
+    this->nearly_destroy();
     try {
       reserve(other.m_size);
     } catch (std::exception &e) {
-      this->nearlyDestroy();
-      handleException(e);
+      this->nearly_destroy();
+      handle_exception(e);
     }
     std::uninitialized_copy(other.begin(), other.end(), begin());
     m_size = other.m_size;
@@ -143,7 +143,7 @@ class small_vector {
   small_vector &operator=(small_vector &&other) noexcept {
     if (this == &other) return *this;
 
-    this->nearlyDestroy();
+    this->nearly_destroy();
     if (other.begin() == other.m_buffptr) {
       // Other uses stack storage - we need to move construct elements
       mpc::uninitialized_move(other.begin(), other.end(), begin());
@@ -188,9 +188,9 @@ class small_vector {
   // Copies inp at the end of vec
   void push_back(const T &inp) {
     try {
-      ensureCapacity(m_size + 1);
+      ensure_capacity(m_size + 1);
     } catch (std::exception &e) {
-      handleException(e);
+      handle_exception(e);
     }
     new (end()) T(inp);
     m_size++;
@@ -199,9 +199,9 @@ class small_vector {
   // Moves inp at the end of vec
   void push_back(T &&inp) {
     try {
-      ensureCapacity(m_size + 1);
+      ensure_capacity(m_size + 1);
     } catch (std::exception &e) {
-      handleException(e);
+      handle_exception(e);
     }
     new (end()) T(std::move(inp));
     m_size++;
@@ -211,9 +211,9 @@ class small_vector {
   template <typename... Ts>
   void emplace_back(Ts &&...params) {
     try {
-      ensureCapacity(m_size + 1);
+      ensure_capacity(m_size + 1);
     } catch (std::exception &e) {
-      handleException(e);
+      handle_exception(e);
     }
     new (end()) T(std::forward<Ts>(params)...);
     m_size++;
@@ -235,9 +235,9 @@ class small_vector {
         i--;
       }
       ::operator delete(temp);
-      handleException(e);
+      handle_exception(e);
     }
-    this->nearlyDestroy();
+    this->nearly_destroy();
     m_data = temp;
     m_size = origSize;
     m_alloc = inp;
@@ -255,7 +255,7 @@ class small_vector {
       try {
         reserve(size);
       } catch (std::exception &e) {
-        handleException(e);
+        handle_exception(e);
       }
       while (m_size < size) {
         new (end()) T(val);
@@ -351,12 +351,12 @@ class small_vector {
 
   //___________________________Debug_______________________________
 
-  size_t getAlloc() const { return m_alloc; }
+  size_t get_alloc() const { return m_alloc; }
 
   //___________________________Private func_______________________________
 
  private:
-  void ensureCapacity(size_t req_sz) {
+  void ensure_capacity(size_t req_sz) {
     if (req_sz <= capacity()) return;  // cap ensured
 
     // For very large sizes, use a smaller growth factor to save memory
@@ -368,13 +368,13 @@ class small_vector {
     reserve(new_cap);
   }
 
-  void handleException(const std::exception &e) {
+  void handle_exception(const std::exception &e) {
     std::cout << e.what() << std::endl;
     throw;
   }
 
   // Near Destructor
-  void nearlyDestroy() noexcept {
+  void nearly_destroy() noexcept {
     clear();
     if (m_alloc) ::operator delete(m_data);
     m_alloc = 0;

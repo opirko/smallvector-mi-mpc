@@ -56,7 +56,7 @@ TEST(SmallVectorTest, MoveConstructorStackStorage) {
     vec1.push_back("world");
     
     // ensure vec1 is using stack storage
-    EXPECT_EQ(vec1.getAlloc(), 0);
+    EXPECT_EQ(vec1.get_alloc(), 0);
     
     small_vector<std::string, 4> vec2(std::move(vec1));
     EXPECT_EQ(vec2.size(), 2);
@@ -73,7 +73,7 @@ TEST(SmallVectorTest, MoveConstructorHeapStorage) {
     }
     
     // ensure vec1 is using heap storage
-    EXPECT_GT(vec1.getAlloc(), 0);
+    EXPECT_GT(vec1.get_alloc(), 0);
     
     small_vector<int, 2> vec2(std::move(vec1));
     EXPECT_EQ(vec2.size(), 10);
@@ -186,10 +186,10 @@ TEST(SmallVectorTest, GrowthStrategy) {
     for (int i = 0; i < 4; ++i) {
         vec.push_back(i);
     }
-    EXPECT_EQ(vec.getAlloc(), 0); // still using stack
+    EXPECT_EQ(vec.get_alloc(), 0); // still using stack
     
     vec.push_back(4);
-    EXPECT_GT(vec.getAlloc(), 4); // now using heap
+    EXPECT_GT(vec.get_alloc(), 4); // now using heap
     
     const auto first_cap = vec.capacity();
     while (vec.size() < first_cap) {
@@ -346,8 +346,8 @@ TEST(SmallVectorTest, SwapMixedStackHeap) {
         vec2.push_back(i + 10);
     }
     
-    EXPECT_EQ(vec1.getAlloc(), 0); // Stack
-    EXPECT_GT(vec2.getAlloc(), 0); // Heap
+    EXPECT_EQ(vec1.get_alloc(), 0); // Stack
+    EXPECT_GT(vec2.get_alloc(), 0); // Heap
     
     vec1.swap(vec2);
     
@@ -371,7 +371,7 @@ TEST(SmallVectorTest, SmallBufferOptimization) {
     
     EXPECT_EQ(vec.size(), 4);
     EXPECT_EQ(vec.capacity(), 4);
-    EXPECT_EQ(vec.getAlloc(), 0);  // should still be using buffer
+    EXPECT_EQ(vec.get_alloc(), 0);  // should still be using buffer
 }
 
 TEST(SmallVectorTest, GrowthBeyondBuffer) {
@@ -383,7 +383,7 @@ TEST(SmallVectorTest, GrowthBeyondBuffer) {
     
     EXPECT_EQ(vec.size(), 10);
     EXPECT_GT(vec.capacity(), 4);
-    EXPECT_GT(vec.getAlloc(), 0);  // should now be using heap
+    EXPECT_GT(vec.get_alloc(), 0);  // should now be using heap
     
     for (int i = 0; i < 10; ++i) {
         EXPECT_EQ(vec[i], i);
