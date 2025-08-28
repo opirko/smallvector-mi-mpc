@@ -4,9 +4,9 @@
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
+#include <cstdio>
 #include <cstdlib>
 #include <exception>
-#include <iostream>
 #include <memory>
 #include <stdexcept>
 
@@ -442,7 +442,7 @@ class small_vector {
   }
 
   void handle_exception(const std::exception &e) {
-    std::cout << e.what() << std::endl;
+    printf("%s\n", e.what());
     throw;
   }
 
