@@ -46,7 +46,10 @@ message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 ######################
 # compilation options
-set(CMAKE_CXX_STANDARD 17)
+
+# Allow user to specify C++ standard (default to 11 for compatibility)
+set(CXX_STANDARD "11" CACHE STRING "C++ standard to use (11, 14, 17, 20, etc.)")
+set(CMAKE_CXX_STANDARD ${CXX_STANDARD})
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS_RELEASE "-O2")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")

@@ -5,7 +5,7 @@ No leaks detected (by `valgrind`).
 
 ## Build Instructions
 
-This project uses CMake as its build system and requires C++17 or higher.
+This project uses CMake as its build system and supports C++11 or higher.
 
 ### Building the Tests
 
@@ -18,6 +18,11 @@ This project uses CMake as its build system and requires C++17 or higher.
 2. Configure the project:
    ```bash
    cmake ..
+   ```
+
+   To specify a different C++ standard:
+   ```bash
+   cmake -DCXX_STANDARD=17 ..
    ```
 
 3. Build the project:

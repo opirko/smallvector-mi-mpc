@@ -11,6 +11,31 @@
 #include <stdexcept>
 
 namespace mpc {
+
+// Compatibility wrapper for uninitialized_move
+#if __cplusplus >= 201703L
+using std::uninitialized_move;  // C++17 has this in STL
+#else
+template <typename InputIt, typename ForwardIt>
+ForwardIt uninitialized_move(InputIt first, InputIt last, ForwardIt d_first) {
+  typedef typename std::iterator_traits<ForwardIt>::value_type Value;
+  ForwardIt current = d_first;
+  try {
+    for (; first != last; ++first, (void)++current) {
+      ::new (static_cast<void *>(std::addressof(*current)))
+          Value(std::move(*first));
+    }
+    return current;
+  } catch (...) {
+    for (; d_first != current; ++d_first) {
+      d_first->~Value();
+    }
+    throw;
+  }
+}
+#endif
+
+// Main Small Vector class
 template <typename T, size_t N = 8>
 class smallVector {
   // Constants
@@ -62,7 +87,7 @@ class smallVector {
   smallVector(smallVector &&other) noexcept : smallVector() {
     if (other.begin() == other.m_buffptr) {
       // Other uses stack storage - we need to move construct elements
-      std::uninitialized_move(other.begin(), other.end(), begin());
+      mpc::uninitialized_move(other.begin(), other.end(), begin());
       m_size = other.m_size;
       other.clear();
       return;
@@ -121,7 +146,7 @@ class smallVector {
     this->nearlyDestroy();
     if (other.begin() == other.m_buffptr) {
       // Other uses stack storage - we need to move construct elements
-      std::uninitialized_move(other.begin(), other.end(), begin());
+      mpc::uninitialized_move(other.begin(), other.end(), begin());
       m_size = other.m_size;
       other.clear();
     } else {
@@ -304,12 +329,12 @@ class smallVector {
       }
       // Move remaining elements from larger to smaller
       if (m_size > other.m_size) {
-        std::uninitialized_move(begin() + min_sz, end(), other.end());
+        mpc::uninitialized_move(begin() + min_sz, end(), other.end());
         for (size_t i = min_sz; i < max_sz; ++i) {
           (begin() + i)->~T();
         }
       } else if (other.m_size > m_size) {
-        std::uninitialized_move(other.begin() + min_sz, other.end(), end());
+        mpc::uninitialized_move(other.begin() + min_sz, other.end(), end());
         for (size_t i = min_sz; i < max_sz; ++i) {
           (other.begin() + i)->~T();
         }
