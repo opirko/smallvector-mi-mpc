@@ -37,7 +37,7 @@ ForwardIt uninitialized_move(InputIt first, InputIt last, ForwardIt d_first) {
 
 // Main Small Vector class
 template <typename T, size_t N = 8>
-class smallVector {
+class small_vector {
   // Constants
   static constexpr size_t LARGE_SIZE_THRESHOLD = 1024;
 
@@ -61,17 +61,17 @@ class smallVector {
   //====================Ctors and Dtors====================
 
   // Default constructor
-  smallVector()
+  small_vector()
       : m_data(nullptr),
         m_buffptr(reinterpret_cast<T *>(m_buff)),
         m_alloc(0),
         m_size(0) {}
 
   // Constructor with given size
-  smallVector(const size_t sz) : smallVector() { resize(sz); }
+  small_vector(const size_t sz) : small_vector() { resize(sz); }
 
   // Copy constructor
-  smallVector(const smallVector &other) : smallVector() {
+  small_vector(const small_vector &other) : small_vector() {
     try {
       reserve(other.m_size);
     } catch (std::exception &e) {
@@ -84,7 +84,7 @@ class smallVector {
   }
 
   // Move constructor
-  smallVector(smallVector &&other) noexcept : smallVector() {
+  small_vector(small_vector &&other) noexcept : small_vector() {
     if (other.begin() == other.m_buffptr) {
       // Other uses stack storage - we need to move construct elements
       mpc::uninitialized_move(other.begin(), other.end(), begin());
@@ -102,7 +102,7 @@ class smallVector {
   }
 
   // Conversion constructor
-  smallVector(std::initializer_list<T> init) : smallVector() {
+  small_vector(std::initializer_list<T> init) : small_vector() {
     try {
       reserve(init.size());
     } catch (std::exception &e) {
@@ -116,7 +116,7 @@ class smallVector {
   }
 
   // Destructor
-  ~smallVector() {
+  ~small_vector() {
     clear();
     if (m_alloc) ::operator delete(m_data);
   }
@@ -124,7 +124,7 @@ class smallVector {
   //___________________________Operators_______________________________
 
   // Copy op =
-  smallVector &operator=(const smallVector &other) {
+  small_vector &operator=(const small_vector &other) {
     if (this == &other) return *this;
     this->nearlyDestroy();
     try {
@@ -140,7 +140,7 @@ class smallVector {
   }
 
   // Move op =
-  smallVector &operator=(smallVector &&other) noexcept {
+  small_vector &operator=(small_vector &&other) noexcept {
     if (this == &other) return *this;
 
     this->nearlyDestroy();
@@ -170,7 +170,7 @@ class smallVector {
   // Bounds-checked access
   reference at(size_t ind) {
     if (ind >= m_size) {
-      throw std::out_of_range("smallVector::at: index out of range");
+      throw std::out_of_range("small_vector::at: index out of range");
     }
     return *(begin() + ind);
   }
@@ -178,7 +178,7 @@ class smallVector {
   // Const bounds-checked access
   const_reference at(size_t ind) const {
     if (ind >= m_size) {
-      throw std::out_of_range("smallVector::at: index out of range");
+      throw std::out_of_range("small_vector::at: index out of range");
     }
     return *(begin() + ind);
   }
@@ -309,7 +309,7 @@ class smallVector {
 
   //___________________________Misc_______________________________
 
-  void swap(smallVector &other) noexcept {
+  void swap(small_vector &other) noexcept {
     // Handle the simple case: both use heap or both use stack
     const auto this_use_stack = (begin() == m_buffptr);
     const auto othe_use_stack = (other.begin() == other.m_buffptr);
@@ -343,7 +343,7 @@ class smallVector {
       std::swap(m_size, other.m_size);
     } else {
       // Mixed case - use temporary (less efficient but correct)
-      smallVector temp(std::move(*this));
+      small_vector temp(std::move(*this));
       *this = std::move(other);
       other = std::move(temp);
     }
@@ -385,7 +385,7 @@ class smallVector {
 
 // outside swap function
 template <typename T, size_t N>
-void swap(smallVector<T, N> &avec, smallVector<T, N> &bvec) noexcept {
+void swap(small_vector<T, N> &avec, small_vector<T, N> &bvec) noexcept {
   avec.swap(bvec);
 }
 

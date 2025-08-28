@@ -2,24 +2,24 @@
 #include <string>
 #include <vector>
 
-#include "smallVector.hpp"
+#include "small_vector.hpp"
 
 using namespace mpc;
 
 TEST(SmallVectorTest, DefaultConstructor) {
-    smallVector<int> vec;
+    small_vector<int> vec;
     EXPECT_EQ(vec.size(), 0);
     EXPECT_GE(vec.capacity(), 8);  // default N = 8
 }
 
 TEST(SmallVectorTest, SizeConstructor) {
-    smallVector<int> vec(5);
+    small_vector<int> vec(5);
     EXPECT_EQ(vec.size(), 5);
     EXPECT_GE(vec.capacity(), 5);
 }
 
 TEST(SmallVectorTest, InitializerListConstructor) {
-    smallVector<int> vec{1, 2, 3, 4, 5};
+    small_vector<int> vec{1, 2, 3, 4, 5};
     EXPECT_EQ(vec.size(), 5);
     EXPECT_EQ(vec[0], 1);
     EXPECT_EQ(vec[1], 2);
@@ -29,8 +29,8 @@ TEST(SmallVectorTest, InitializerListConstructor) {
 }
 
 TEST(SmallVectorTest, CopyConstructor) {
-    smallVector<int> vec1{1, 2, 3};
-    smallVector<int> vec2(vec1);
+    small_vector<int> vec1{1, 2, 3};
+    small_vector<int> vec2(vec1);
     
     vec1[0] = 5;
     EXPECT_EQ(vec2.size(), 3);
@@ -40,8 +40,8 @@ TEST(SmallVectorTest, CopyConstructor) {
 }
 
 TEST(SmallVectorTest, MoveConstructor) {
-    smallVector<int> vec1{1, 2, 3};
-    smallVector<int> vec2(std::move(vec1));
+    small_vector<int> vec1{1, 2, 3};
+    small_vector<int> vec2(std::move(vec1));
     
     EXPECT_EQ(vec2.size(), 3);
     EXPECT_EQ(vec2[0], 1);
@@ -51,14 +51,14 @@ TEST(SmallVectorTest, MoveConstructor) {
 }
 
 TEST(SmallVectorTest, MoveConstructorStackStorage) {
-    smallVector<std::string, 4> vec1;
+    small_vector<std::string, 4> vec1;
     vec1.push_back("hello");
     vec1.push_back("world");
     
     // ensure vec1 is using stack storage
     EXPECT_EQ(vec1.getAlloc(), 0);
     
-    smallVector<std::string, 4> vec2(std::move(vec1));
+    small_vector<std::string, 4> vec2(std::move(vec1));
     EXPECT_EQ(vec2.size(), 2);
     EXPECT_EQ(vec2[0], "hello");
     EXPECT_EQ(vec2[1], "world");
@@ -67,7 +67,7 @@ TEST(SmallVectorTest, MoveConstructorStackStorage) {
 }
 
 TEST(SmallVectorTest, MoveConstructorHeapStorage) {
-    smallVector<int, 2> vec1;
+    small_vector<int, 2> vec1;
     for (int i = 0; i < 10; ++i) {
         vec1.push_back(i);
     }
@@ -75,7 +75,7 @@ TEST(SmallVectorTest, MoveConstructorHeapStorage) {
     // ensure vec1 is using heap storage
     EXPECT_GT(vec1.getAlloc(), 0);
     
-    smallVector<int, 2> vec2(std::move(vec1));
+    small_vector<int, 2> vec2(std::move(vec1));
     EXPECT_EQ(vec2.size(), 10);
     for (int i = 0; i < 10; ++i) {
         EXPECT_EQ(vec2[i], i);
@@ -85,8 +85,8 @@ TEST(SmallVectorTest, MoveConstructorHeapStorage) {
 }
 
 TEST(SmallVectorTest, CopyAssignment) {
-    smallVector<int> vec1{1, 2, 3};
-    smallVector<int> vec2;
+    small_vector<int> vec1{1, 2, 3};
+    small_vector<int> vec2;
     vec2 = vec1;
     vec1[0] = 5;
     
@@ -97,8 +97,8 @@ TEST(SmallVectorTest, CopyAssignment) {
 }
 
 TEST(SmallVectorTest, MoveAssignment) {
-    smallVector<int> vec1{1, 2, 3};
-    smallVector<int> vec2;
+    small_vector<int> vec1{1, 2, 3};
+    small_vector<int> vec2;
     vec2 = std::move(vec1);
     
     EXPECT_EQ(vec2.size(), 3);
@@ -109,11 +109,11 @@ TEST(SmallVectorTest, MoveAssignment) {
 }
 
 TEST(SmallVectorTest, MoveAssignmentStackStorage) {
-    smallVector<std::string, 4> vec1;
+    small_vector<std::string, 4> vec1;
     vec1.push_back("hello");
     vec1.push_back("world");
     
-    smallVector<std::string, 4> vec2;
+    small_vector<std::string, 4> vec2;
     vec2.push_back("existing");
     
     vec2 = std::move(vec1);
@@ -125,12 +125,12 @@ TEST(SmallVectorTest, MoveAssignmentStackStorage) {
 }
 
 TEST(SmallVectorTest, MoveAssignmentHeapStorage) {
-    smallVector<int, 2> vec1;
+    small_vector<int, 2> vec1;
     for (int i = 0; i < 10; ++i) {
         vec1.push_back(i);
     }
     
-    smallVector<int, 2> vec2;
+    small_vector<int, 2> vec2;
     vec2.push_back(999);
     
     vec2 = std::move(vec1);
@@ -143,7 +143,7 @@ TEST(SmallVectorTest, MoveAssignmentHeapStorage) {
 }
 
 TEST(SmallVectorTest, PushBackCopy) {
-    smallVector<int> vec;
+    small_vector<int> vec;
     int val = 42;
     vec.push_back(val);
     val = 2;
@@ -153,7 +153,7 @@ TEST(SmallVectorTest, PushBackCopy) {
 }
 
 TEST(SmallVectorTest, PushBackMove) {
-    smallVector<std::string> vec;
+    small_vector<std::string> vec;
     std::string str = "hello";
     vec.push_back(std::move(str));
     
@@ -163,7 +163,7 @@ TEST(SmallVectorTest, PushBackMove) {
 }
 
 TEST(SmallVectorTest, EmplaceBack) {
-    smallVector<std::string> vec;
+    small_vector<std::string> vec;
     vec.emplace_back("hello");
     vec.emplace_back(5, 'a');  // string with 5 'a's
     
@@ -173,7 +173,7 @@ TEST(SmallVectorTest, EmplaceBack) {
 }
 
 TEST(SmallVectorTest, Reserve) {
-    smallVector<int> vec;
+    small_vector<int> vec;
     vec.reserve(20);
     
     EXPECT_GE(vec.capacity(), 20);
@@ -181,7 +181,7 @@ TEST(SmallVectorTest, Reserve) {
 }
 
 TEST(SmallVectorTest, GrowthStrategy) {
-    smallVector<int, 4> vec;
+    small_vector<int, 4> vec;
     
     for (int i = 0; i < 4; ++i) {
         vec.push_back(i);
@@ -209,7 +209,7 @@ TEST(SmallVectorTest, GrowthStrategy) {
 }
 
 TEST(SmallVectorTest, Resize) {
-    smallVector<int> vec;
+    small_vector<int> vec;
     vec.resize(5, 42);
     
     EXPECT_EQ(vec.size(), 5);
@@ -219,7 +219,7 @@ TEST(SmallVectorTest, Resize) {
 }
 
 TEST(SmallVectorTest, ResizeDown) {
-    smallVector<int> vec{1, 2, 3, 4, 5};
+    small_vector<int> vec{1, 2, 3, 4, 5};
     vec.resize(3);
     
     EXPECT_EQ(vec.size(), 3);
@@ -229,14 +229,14 @@ TEST(SmallVectorTest, ResizeDown) {
 }
 
 TEST(SmallVectorTest, Clear) {
-    smallVector<int> vec{1, 2, 3, 4, 5};
+    small_vector<int> vec{1, 2, 3, 4, 5};
     vec.clear();
     
     EXPECT_EQ(vec.size(), 0);
 }
 
 TEST(SmallVectorTest, Iterators) {
-    smallVector<int> vec{1, 2, 3, 4, 5};
+    small_vector<int> vec{1, 2, 3, 4, 5};
     
     int expected = 1;
     for (auto it = vec.begin(); it != vec.end(); ++it) {
@@ -250,7 +250,7 @@ TEST(SmallVectorTest, Iterators) {
 }
 
 TEST(SmallVectorTest, ConstIterators) {
-    const smallVector<int> vec{1, 2, 3, 4, 5};
+    const small_vector<int> vec{1, 2, 3, 4, 5};
     
     int expected = 1;
     for (auto it = vec.begin(); it != vec.end(); ++it) {
@@ -259,7 +259,7 @@ TEST(SmallVectorTest, ConstIterators) {
 }
 
 TEST(SmallVectorTest, Data) {
-    smallVector<int> vec{1, 2, 3};
+    small_vector<int> vec{1, 2, 3};
     int* ptr = vec.data();
     
     EXPECT_EQ(ptr[0], 1);
@@ -268,8 +268,8 @@ TEST(SmallVectorTest, Data) {
 }
 
 TEST(SmallVectorTest, Swap) {
-    smallVector<int> vec1{1, 2, 3};
-    smallVector<int> vec2{4, 5};
+    small_vector<int> vec1{1, 2, 3};
+    small_vector<int> vec2{4, 5};
     
     vec1.swap(vec2);
     
@@ -284,8 +284,8 @@ TEST(SmallVectorTest, Swap) {
 }
 
 TEST(SmallVectorTest, FreeSwapFunction) {
-    smallVector<int> vec1{1, 2, 3};
-    smallVector<int> vec2{4, 5};
+    small_vector<int> vec1{1, 2, 3};
+    small_vector<int> vec2{4, 5};
     
     swap(vec1, vec2);
     
@@ -300,8 +300,8 @@ TEST(SmallVectorTest, FreeSwapFunction) {
 }
 
 TEST(SmallVectorTest, SwapBothStack) {
-    smallVector<int, 8> vec1{1, 2, 3};
-    smallVector<int, 8> vec2{4, 5};
+    small_vector<int, 8> vec1{1, 2, 3};
+    small_vector<int, 8> vec2{4, 5};
     
     vec1.swap(vec2);
     
@@ -316,8 +316,8 @@ TEST(SmallVectorTest, SwapBothStack) {
 }
 
 TEST(SmallVectorTest, SwapBothHeap) {
-    smallVector<int, 2> vec1;
-    smallVector<int, 2> vec2;
+    small_vector<int, 2> vec1;
+    small_vector<int, 2> vec2;
     
     for (int i = 0; i < 10; ++i) {
         vec1.push_back(i);
@@ -339,8 +339,8 @@ TEST(SmallVectorTest, SwapBothHeap) {
 }
 
 TEST(SmallVectorTest, SwapMixedStackHeap) {
-    smallVector<int, 4> vec1{1, 2, 3};
-    smallVector<int, 4> vec2;
+    small_vector<int, 4> vec1{1, 2, 3};
+    small_vector<int, 4> vec2;
     
     for (int i = 0; i < 10; ++i) {
         vec2.push_back(i + 10);
@@ -364,7 +364,7 @@ TEST(SmallVectorTest, SwapMixedStackHeap) {
 
 TEST(SmallVectorTest, SmallBufferOptimization) {
     // test that small vectors use the internal buffer
-    smallVector<int, 4> vec;
+    small_vector<int, 4> vec;
     for (int i = 0; i < 4; ++i) {
         vec.push_back(i);
     }
@@ -376,7 +376,7 @@ TEST(SmallVectorTest, SmallBufferOptimization) {
 
 TEST(SmallVectorTest, GrowthBeyondBuffer) {
     // test growth beyond the internal buffer
-    smallVector<int, 4> vec;
+    small_vector<int, 4> vec;
     for (int i = 0; i < 10; ++i) {
         vec.push_back(i);
     }
@@ -391,7 +391,7 @@ TEST(SmallVectorTest, GrowthBeyondBuffer) {
 }
 
 TEST(SmallVectorTest, StringVector) {
-    smallVector<std::string> vec;
+    small_vector<std::string> vec;
     vec.push_back("hello");
     vec.push_back("world");
     vec.emplace_back("test");
@@ -403,7 +403,7 @@ TEST(SmallVectorTest, StringVector) {
 }
 
 TEST(SmallVectorTest, BoundsChecking) {
-    smallVector<int> vec{1, 2, 3};
+    small_vector<int> vec{1, 2, 3};
     
     EXPECT_EQ(vec.at(0), 1);
     EXPECT_EQ(vec.at(1), 2);
@@ -414,7 +414,7 @@ TEST(SmallVectorTest, BoundsChecking) {
 }
 
 TEST(SmallVectorTest, ConstBoundsChecking) {
-    const smallVector<int> vec{1, 2, 3};
+    const small_vector<int> vec{1, 2, 3};
     
     EXPECT_EQ(vec.at(0), 1);
     EXPECT_EQ(vec.at(1), 2);
@@ -424,7 +424,7 @@ TEST(SmallVectorTest, ConstBoundsChecking) {
 }
 
 TEST(SmallVectorTest, SelfAssignment) {
-    smallVector<int> vec{1, 2, 3, 4, 5};
+    small_vector<int> vec{1, 2, 3, 4, 5};
     
     // self-assignment should be safe
     vec = vec;
@@ -436,7 +436,7 @@ TEST(SmallVectorTest, SelfAssignment) {
 }
 
 TEST(SmallVectorTest, SelfMoveAssignment) {
-    smallVector<int> vec{1, 2, 3, 4, 5};
+    small_vector<int> vec{1, 2, 3, 4, 5};
     
     // self-move-assignment should be safe
 #pragma GCC diagnostic push
