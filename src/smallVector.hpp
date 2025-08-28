@@ -8,10 +8,14 @@
 #include <exception>
 #include <iostream>
 #include <memory>
+#include <stdexcept>
 
 namespace mpc {
 template <typename T, size_t N = 8>
 class smallVector {
+  // Constants
+  static constexpr size_t LARGE_SIZE_THRESHOLD = 1024;
+
   // Member variables
   T *m_data;
   T *m_buffptr;
@@ -43,13 +47,11 @@ class smallVector {
 
   // Copy constructor
   smallVector(const smallVector &other) : smallVector() {
-    // std::cout<<"Copy constr called"<<std::endl;
     try {
       reserve(other.m_size);
     } catch (std::exception &e) {
       this->nearlyDestroy();
-      std::cout << e.what() << std::endl;
-      throw;
+      handleException(e);
     }
     std::uninitialized_copy(other.begin(), other.end(), begin());
     m_size = other.m_size;
@@ -57,19 +59,21 @@ class smallVector {
   }
 
   // Move constructor
-  smallVector(smallVector &&other) noexcept {
-    // std::cout<<"Move constr called"<<std::endl;
+  smallVector(smallVector &&other) noexcept : smallVector() {
     if (other.begin() == other.m_buffptr) {
-      m_buffptr = other.m_buffptr;
-      other.m_buffptr = nullptr;
-    } else {
-      m_data = other.m_data;
-      other.m_data = nullptr;
+      // Other uses stack storage - we need to move construct elements
+      std::uninitialized_move(other.begin(), other.end(), begin());
+      m_size = other.m_size;
+      other.clear();
+      return;
     }
+    // Other uses heap storage - we can steal the pointer
+    m_data = other.m_data;
     m_alloc = other.m_alloc;
     m_size = other.m_size;
-    other.m_size = 0;
+    other.m_data = nullptr;
     other.m_alloc = 0;
+    other.m_size = 0;
   }
 
   // Conversion constructor
@@ -78,8 +82,7 @@ class smallVector {
       reserve(init.size());
     } catch (std::exception &e) {
       this->nearlyDestroy();
-      std::cout << e.what() << std::endl;
-      throw;
+      handleException(e);
     }
     for (auto it = init.begin(); it != init.end(); it++) {
       new (end()) T(*it);
@@ -97,15 +100,13 @@ class smallVector {
 
   // Copy op =
   smallVector &operator=(const smallVector &other) {
-    // std::cout<<"Copy op= called"<<std::endl;
     if (this == &other) return *this;
     this->nearlyDestroy();
     try {
       reserve(other.m_size);
     } catch (std::exception &e) {
       this->nearlyDestroy();
-      std::cout << e.what() << std::endl;
-      throw;
+      handleException(e);
     }
     std::uninitialized_copy(other.begin(), other.end(), begin());
     m_size = other.m_size;
@@ -115,19 +116,23 @@ class smallVector {
 
   // Move op =
   smallVector &operator=(smallVector &&other) noexcept {
-    // std::cout<<"Move op= called"<<std::endl;
+    if (this == &other) return *this;
+
     this->nearlyDestroy();
     if (other.begin() == other.m_buffptr) {
-      m_buffptr = other.m_buffptr;
-      other.m_buffptr = nullptr;
+      // Other uses stack storage - we need to move construct elements
+      std::uninitialized_move(other.begin(), other.end(), begin());
+      m_size = other.m_size;
+      other.clear();
     } else {
+      // Other uses heap storage - we can steal the pointer
       m_data = other.m_data;
+      m_alloc = other.m_alloc;
+      m_size = other.m_size;
       other.m_data = nullptr;
+      other.m_alloc = 0;
+      other.m_size = 0;
     }
-    m_alloc = other.m_alloc;
-    m_size = other.m_size;
-    other.m_size = 0;
-    other.m_alloc = 0;
     return *this;
   }
 
@@ -137,17 +142,30 @@ class smallVector {
   // const [] op
   const_reference operator[](size_t ind) const { return *(begin() + ind); }
 
-  //___________________________Element
-  // manipulation_______________________________
+  // Bounds-checked access
+  reference at(size_t ind) {
+    if (ind >= m_size) {
+      throw std::out_of_range("smallVector::at: index out of range");
+    }
+    return *(begin() + ind);
+  }
+
+  // Const bounds-checked access
+  const_reference at(size_t ind) const {
+    if (ind >= m_size) {
+      throw std::out_of_range("smallVector::at: index out of range");
+    }
+    return *(begin() + ind);
+  }
+
+  //_________________Element manipulation_______________
 
   // Copies inp at the end of vec
   void push_back(const T &inp) {
-    // std::cout<<"Copy PB called"<<std::endl;
     try {
-      PbEbCheck(m_size + 1);
+      ensureCapacity(m_size + 1);
     } catch (std::exception &e) {
-      std::cout << e.what() << std::endl;
-      throw;
+      handleException(e);
     }
     new (end()) T(inp);
     m_size++;
@@ -155,12 +173,10 @@ class smallVector {
 
   // Moves inp at the end of vec
   void push_back(T &&inp) {
-    // std::cout<<"Move PB called"<<std::endl;
     try {
-      PbEbCheck(m_size + 1);
+      ensureCapacity(m_size + 1);
     } catch (std::exception &e) {
-      std::cout << e.what() << std::endl;
-      throw;
+      handleException(e);
     }
     new (end()) T(std::move(inp));
     m_size++;
@@ -169,12 +185,10 @@ class smallVector {
   // Emplace back
   template <typename... Ts>
   void emplace_back(Ts &&...params) {
-    // std::cout<<"Emplace Back called"<<std::endl;
     try {
-      PbEbCheck(m_size + 1);
+      ensureCapacity(m_size + 1);
     } catch (std::exception &e) {
-      std::cout << e.what() << std::endl;
-      throw;
+      handleException(e);
     }
     new (end()) T(std::forward<Ts>(params)...);
     m_size++;
@@ -183,7 +197,6 @@ class smallVector {
   // Reserves at least inp in vec
   // Strong exc. guar.
   void reserve(size_t inp) {
-    // std::cout<<"Reserve called"<<std::endl;
     if (m_alloc > inp || N >= inp) return;
     T *temp = (T *)::operator new(inp * sizeof(T));
     size_t origSize = m_size;
@@ -197,8 +210,7 @@ class smallVector {
         i--;
       }
       ::operator delete(temp);
-      std::cout << e.what() << std::endl;
-      throw;
+      handleException(e);
     }
     this->nearlyDestroy();
     m_data = temp;
@@ -206,7 +218,7 @@ class smallVector {
     m_alloc = inp;
   }
 
-  // strong exc. guarantee
+  // Strong exc. guarantee
   void resize(size_t size, const T &val = T()) {
     if (size == m_size) return;
     if (size < m_size) {
@@ -218,8 +230,7 @@ class smallVector {
       try {
         reserve(size);
       } catch (std::exception &e) {
-        std::cout << e.what() << std::endl;
-        throw;
+        handleException(e);
       }
       while (m_size < size) {
         new (end()) T(val);
@@ -274,41 +285,67 @@ class smallVector {
   //___________________________Misc_______________________________
 
   void swap(smallVector &other) noexcept {
-    // std::cout<<"swap called"<<std::endl;
-    if (begin() == m_data && other.begin() == other.m_data)
+    // Handle the simple case: both use heap or both use stack
+    const auto this_use_stack = (begin() == m_buffptr);
+    const auto othe_use_stack = (other.begin() == other.m_buffptr);
+
+    if (!this_use_stack && !othe_use_stack) {
+      // Both use heap - just swap pointers and sizes
       std::swap(m_data, other.m_data);
-    else if (begin() == m_buffptr && other.begin() == other.m_buffptr)
-      std::swap(m_buffptr, other.m_buffptr);
-    else {
-      std::swap(m_data, other.m_data);
-      std::swap(m_buffptr, other.m_buffptr);
+      std::swap(m_size, other.m_size);
+      std::swap(m_alloc, other.m_alloc);
+    } else if (this_use_stack && othe_use_stack) {
+      // Both use stack - swap element by element
+      const auto min_sz = std::min(m_size, other.m_size);
+      const auto max_sz = std::max(m_size, other.m_size);
+      // Swap the common elements
+      for (size_t i = 0; i < min_sz; ++i) {
+        std::swap(*(begin() + i), *(other.begin() + i));
+      }
+      // Move remaining elements from larger to smaller
+      if (m_size > other.m_size) {
+        std::uninitialized_move(begin() + min_sz, end(), other.end());
+        for (size_t i = min_sz; i < max_sz; ++i) {
+          (begin() + i)->~T();
+        }
+      } else if (other.m_size > m_size) {
+        std::uninitialized_move(other.begin() + min_sz, other.end(), end());
+        for (size_t i = min_sz; i < max_sz; ++i) {
+          (other.begin() + i)->~T();
+        }
+      }
+
+      std::swap(m_size, other.m_size);
+    } else {
+      // Mixed case - use temporary (less efficient but correct)
+      smallVector temp(std::move(*this));
+      *this = std::move(other);
+      other = std::move(temp);
     }
-    std::swap(m_size, other.m_size);
-    std::swap(m_alloc, other.m_alloc);
   }
 
   //___________________________Debug_______________________________
 
-  size_t getAlloc() { return m_alloc; }
+  size_t getAlloc() const { return m_alloc; }
 
   //___________________________Private func_______________________________
 
  private:
-  void PbEbCheck(size_t chckSize) {
-    if (chckSize > N) {
-      try {
-        reserve(N * 2);
-      } catch (std::exception &e) {
-        throw;
-      }
-    }
-    if (chckSize > m_alloc) {
-      try {
-        reserve(m_alloc * 2);
-      } catch (std::exception &e) {
-        throw;
-      }
-    }
+  void ensureCapacity(size_t req_sz) {
+    if (req_sz <= capacity()) return;  // cap ensured
+
+    // For very large sizes, use a smaller growth factor to save memory
+    const auto new_cap_suggestion = capacity() > LARGE_SIZE_THRESHOLD
+                                        ? (capacity() + capacity() / 2)
+                                        : (capacity() * 2);
+    const auto new_cap = std::max(new_cap_suggestion, req_sz);
+
+    reserve(new_cap);
+  }
+
+  void handleException(const std::exception &e) {
+    std::cout << e.what() << std::endl;
+    throw;
   }
 
   // Near Destructor
