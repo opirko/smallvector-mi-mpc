@@ -5,7 +5,7 @@ No leaks detected (by `valgrind`).
 
 ## Build Instructions
 
-This project uses CMake as its build system and requires C++20.
+This project uses CMake as its build system and requires C++17 or higher.
 
 ### Building the Tests
 

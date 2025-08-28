@@ -46,7 +46,7 @@ message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
 ######################
 # compilation options
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS_RELEASE "-O2")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
