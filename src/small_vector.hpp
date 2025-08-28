@@ -162,13 +162,15 @@ class small_vector {
   }
 
   // [] op
-  reference operator[](size_t ind) { return *(begin() + ind); }
+  reference operator[](const size_t ind) { return *(begin() + ind); }
 
   // const [] op
-  const_reference operator[](size_t ind) const { return *(begin() + ind); }
+  const_reference operator[](const size_t ind) const {
+    return *(begin() + ind);
+  }
 
   // Bounds-checked access
-  reference at(size_t ind) {
+  reference at(const size_t ind) {
     if (ind >= m_size) {
       throw std::out_of_range("small_vector::at: index out of range");
     }
@@ -176,7 +178,7 @@ class small_vector {
   }
 
   // Const bounds-checked access
-  const_reference at(size_t ind) const {
+  const_reference at(const size_t ind) const {
     if (ind >= m_size) {
       throw std::out_of_range("small_vector::at: index out of range");
     }
@@ -221,10 +223,10 @@ class small_vector {
 
   // Reserves at least inp in vec
   // Strong exc. guar.
-  void reserve(size_t inp) {
+  void reserve(const size_t inp) {
     if (m_alloc > inp || N >= inp) return;
     T *temp = (T *)::operator new(inp * sizeof(T));
-    size_t origSize = m_size;
+    const auto orig_sz = m_size;
     size_t i;
     try {
       for (i = 0; i < m_size; i++)
@@ -239,12 +241,12 @@ class small_vector {
     }
     this->nearly_destroy();
     m_data = temp;
-    m_size = origSize;
+    m_size = orig_sz;
     m_alloc = inp;
   }
 
   // Strong exc. guarantee
-  void resize(size_t size, const T &val = T()) {
+  void resize(const size_t size, const T &val = T()) {
     if (size == m_size) return;
     if (size < m_size) {
       while (size < m_size) {
@@ -274,19 +276,9 @@ class small_vector {
 
   //___________________________Iterator_______________________________
 
-  iterator begin() {
-    if (m_alloc)
-      return m_data;
-    else
-      return m_buffptr;
-  }
+  iterator begin() { return m_alloc ? m_data : m_buffptr; }
 
-  const_iterator begin() const {
-    if (m_alloc)
-      return m_data;
-    else
-      return m_buffptr;
-  }
+  const_iterator begin() const { return m_alloc ? m_data : m_buffptr; }
 
   iterator end() { return begin() + m_size; }
 
@@ -296,12 +288,7 @@ class small_vector {
 
   size_t size() const noexcept { return m_size; }
 
-  size_t capacity() const noexcept {
-    if (m_alloc)
-      return m_alloc;
-    else
-      return N;
-  }
+  size_t capacity() const noexcept { return m_alloc ? m_alloc : N; }
 
   pointer data() { return begin(); }
 
@@ -330,12 +317,12 @@ class small_vector {
       // Move remaining elements from larger to smaller
       if (m_size > other.m_size) {
         mpc::uninitialized_move(begin() + min_sz, end(), other.end());
-        for (size_t i = min_sz; i < max_sz; ++i) {
+        for (auto i = min_sz; i < max_sz; ++i) {
           (begin() + i)->~T();
         }
       } else if (other.m_size > m_size) {
         mpc::uninitialized_move(other.begin() + min_sz, other.end(), end());
-        for (size_t i = min_sz; i < max_sz; ++i) {
+        for (auto i = min_sz; i < max_sz; ++i) {
           (other.begin() + i)->~T();
         }
       }
@@ -356,7 +343,7 @@ class small_vector {
   //___________________________Private func_______________________________
 
  private:
-  void ensure_capacity(size_t req_sz) {
+  void ensure_capacity(const size_t req_sz) {
     if (req_sz <= capacity()) return;  // cap ensured
 
     // For very large sizes, use a smaller growth factor to save memory
@@ -376,7 +363,9 @@ class small_vector {
   // Near Destructor
   void nearly_destroy() noexcept {
     clear();
-    if (m_alloc) ::operator delete(m_data);
+    if (m_alloc) {
+      ::operator delete(m_data);
+    }
     m_alloc = 0;
     m_size = 0;
   }
