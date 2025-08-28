@@ -1,0 +1,14 @@
+cmake_minimum_required(VERSION 3.5)
+
+project(googletest-download NONE)
+
+include(ExternalProject)
+ExternalProject_Add(googletest
+    URL https://github.com/google/googletest/releases/download/v1.15.0/googletest-1.15.0.tar.gz
+    URL_HASH SHA256=7315acb6bf10e99f332c8a43f00d5fbb1ee6ca48c52f6b936991b216c586aaad
+    SOURCE_DIR        "${CMAKE_BINARY_DIR}/googletest-src"
+    BINARY_DIR        "${CMAKE_BINARY_DIR}/googletest-build"
+    CONFIGURE_COMMAND ""
+    BUILD_COMMAND     ""
+    INSTALL_COMMAND   ""
+    TEST_COMMAND      "")

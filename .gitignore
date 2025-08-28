@@ -1,1 +1,5 @@
+# build related
 /_build
+
+# editors
+/.vscode

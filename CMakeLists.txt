@@ -51,8 +51,29 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS_RELEASE "-O2")
 set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 
+######################
+# tests
+enable_testing()
+configure_file(test/CMakeLists.txt.gtest.in googletest-download/CMakeLists.txt)
+execute_process(COMMAND ${CMAKE_COMMAND} -G "${CMAKE_GENERATOR}" .
+                RESULT_VARIABLE result
+                WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download )
+if(result)
+    message(FATAL_ERROR "CMake step for googletest failed: ${result}")
+endif()
+execute_process(COMMAND ${CMAKE_COMMAND} --build .
+                RESULT_VARIABLE result
+                WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/googletest-download )
+if(result)
+    message(FATAL_ERROR "Build step for googletest failed: ${result}")
+endif()
+
+add_subdirectory(${CMAKE_CURRENT_BINARY_DIR}/googletest-src
+                 ${CMAKE_CURRENT_BINARY_DIR}/googletest-build
+                 EXCLUDE_FROM_ALL)
+
 set(TEST_SOURCES
-    src/testMain.cpp
+    test/test_small_vector.cpp
 )
 
 add_executable(test_small_vector ${TEST_SOURCES})
@@ -60,6 +81,8 @@ add_executable(test_small_vector ${TEST_SOURCES})
 # Set compile options, definitions and include directories
 target_compile_options(test_small_vector PRIVATE -Wall -Wextra -Werror -pedantic)
 target_include_directories(test_small_vector PRIVATE src)
+target_link_libraries(test_small_vector gtest_main)
+add_test(NAME SmallVectorTests COMMAND test_small_vector)
 
 # Format target
 find_program(CLANG_FORMAT_EXECUTABLE clang-format)

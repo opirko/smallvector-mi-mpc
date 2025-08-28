@@ -7,7 +7,7 @@ No leaks detected (by `valgrind`).
 
 This project uses CMake as its build system and requires C++20.
 
-### Building the Project
+### Building the Tests
 
 1. Create a build directory:
    ```bash
@@ -25,7 +25,7 @@ This project uses CMake as its build system and requires C++20.
    make -j`nproc`
    ```
 
-## Run Instructions
+## Test Run Instructions
 
 After building, you can run the test executable:
 
