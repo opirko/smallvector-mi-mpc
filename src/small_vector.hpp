@@ -43,7 +43,6 @@ class small_vector {
 
   // Member variables
   T *m_data;
-  T *m_buffptr;
   alignas(alignof(T)) char m_buff[sizeof(T) * N];
   size_t m_alloc;
   size_t m_size;
@@ -63,11 +62,7 @@ class small_vector {
   //====================Ctors and Dtors====================
 
   // Default constructor
-  small_vector()
-      : m_data(nullptr),
-        m_buffptr(reinterpret_cast<T *>(m_buff)),
-        m_alloc(0),
-        m_size(0) {}
+  small_vector() : m_data(nullptr), m_alloc(0), m_size(0) {}
 
   // Constructor with given size
   small_vector(const size_t sz) : small_vector() { resize(sz); }
@@ -87,7 +82,7 @@ class small_vector {
 
   // Move constructor
   small_vector(small_vector &&other) noexcept : small_vector() {
-    if (other.begin() == other.m_buffptr) {
+    if (!other.m_alloc) {
       // Other uses stack storage - we need to move construct elements
       mpc::uninitialized_move(other.begin(), other.end(), begin());
       m_size = other.m_size;
@@ -146,7 +141,7 @@ class small_vector {
     if (this == &other) return *this;
 
     this->nearly_destroy();
-    if (other.begin() == other.m_buffptr) {
+    if (!other.m_alloc) {
       // Other uses stack storage - we need to move construct elements
       mpc::uninitialized_move(other.begin(), other.end(), begin());
       m_size = other.m_size;
@@ -326,10 +321,10 @@ class small_vector {
 
   //___________________________Iterator_______________________________
 
-  iterator begin() { return m_alloc ? m_data : m_buffptr; }
+  iterator begin() { return m_alloc ? m_data : reinterpret_cast<T *>(m_buff); }
   const_iterator begin() const { return cbegin(); }
   const_iterator cbegin() const noexcept {
-    return m_alloc ? m_data : m_buffptr;
+    return m_alloc ? m_data : reinterpret_cast<T *>(const_cast<char *>(m_buff));
   }
   reverse_iterator rbegin() { return reverse_iterator(end()); }
   const_reverse_iterator rbegin() const { return crbegin(); }
@@ -366,16 +361,12 @@ class small_vector {
   //___________________________Misc_______________________________
 
   void swap(small_vector &other) noexcept {
-    // Handle the simple case: both use heap or both use stack
-    const auto this_use_stack = (begin() == m_buffptr);
-    const auto othe_use_stack = (other.begin() == other.m_buffptr);
-
-    if (!this_use_stack && !othe_use_stack) {
+    if (m_alloc && other.m_alloc) {
       // Both use heap - just swap pointers and sizes
       std::swap(m_data, other.m_data);
       std::swap(m_size, other.m_size);
       std::swap(m_alloc, other.m_alloc);
-    } else if (this_use_stack && othe_use_stack) {
+    } else if (!m_alloc && !other.m_alloc) {
       // Both use stack - swap element by element
       const auto min_sz = std::min(m_size, other.m_size);
       const auto max_sz = std::max(m_size, other.m_size);
