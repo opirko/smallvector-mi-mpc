@@ -57,6 +57,8 @@ class small_vector {
   typedef const T *const_pointer;
   typedef T *iterator;
   typedef const T *const_iterator;
+  typedef std::reverse_iterator<iterator> reverse_iterator;
+  typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
   //====================Ctors and Dtors====================
 
@@ -277,12 +279,24 @@ class small_vector {
   //___________________________Iterator_______________________________
 
   iterator begin() { return m_alloc ? m_data : m_buffptr; }
-
-  const_iterator begin() const { return m_alloc ? m_data : m_buffptr; }
+  const_iterator begin() const { return cbegin(); }
+  const_iterator cbegin() const noexcept {
+    return m_alloc ? m_data : m_buffptr;
+  }
+  reverse_iterator rbegin() { return reverse_iterator(end()); }
+  const_reverse_iterator rbegin() const { return crbegin(); }
+  const_reverse_iterator crbegin() const noexcept {
+    return const_reverse_iterator(end());
+  }
 
   iterator end() { return begin() + m_size; }
-
-  const_iterator end() const { return begin() + m_size; }
+  const_iterator end() const { return cend(); }
+  const_iterator cend() const noexcept { return begin() + m_size; }
+  reverse_iterator rend() { return reverse_iterator(begin()); }
+  const_reverse_iterator rend() const { return crend(); }
+  const_reverse_iterator crend() const noexcept {
+    return const_reverse_iterator(begin());
+  }
 
   //___________________________Getters_______________________________
 
@@ -291,8 +305,15 @@ class small_vector {
   size_t capacity() const noexcept { return m_alloc ? m_alloc : N; }
 
   pointer data() { return begin(); }
-
   const_pointer data() const { return begin(); }
+
+  //___________________________Element Access_______________________________
+
+  reference front() { return *begin(); }
+  const_reference front() const { return *begin(); }
+
+  reference back() { return *(end() - 1); }
+  const_reference back() const { return *(end() - 1); }
 
   //___________________________Misc_______________________________
 

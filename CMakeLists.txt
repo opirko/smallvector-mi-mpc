@@ -90,7 +90,7 @@ add_test(NAME SmallVectorTests COMMAND test_small_vector)
 # Format target
 find_program(CLANG_FORMAT_EXECUTABLE clang-format)
 if(CLANG_FORMAT_EXECUTABLE)
-    file(GLOB_RECURSE ALL_SOURCE_FILES src/*.cpp src/*.hpp)
+    file(GLOB_RECURSE ALL_SOURCE_FILES src/*.cpp src/*.hpp test/*.cpp test/*.hpp)
     add_custom_target(format
         COMMAND ${CLANG_FORMAT_EXECUTABLE} -i ${ALL_SOURCE_FILES}
         COMMENT "Formatting source files"
